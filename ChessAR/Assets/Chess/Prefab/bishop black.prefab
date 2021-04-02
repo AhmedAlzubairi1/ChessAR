@@ -11,9 +11,10 @@ GameObject:
   - component: {fileID: 4300806698655444}
   - component: {fileID: 33017829115479750}
   - component: {fileID: 23471427938731296}
+  - component: {fileID: 3150815079433914805}
   m_Layer: 0
   m_Name: bishop black
-  m_TagString: Untagged
+  m_TagString: Piece
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -79,3 +80,16 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+--- !u!65 &3150815079433914805
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1916680518618882}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1.9498559, y: 3.7877054, z: 1.900969}
+  m_Center: {x: -0.016804278, y: 1.8938477, z: 0.07090187}
