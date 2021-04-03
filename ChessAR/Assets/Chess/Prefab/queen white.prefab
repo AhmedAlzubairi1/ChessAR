@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 33360194353735420}
   - component: {fileID: 23353531918940410}
   - component: {fileID: 8138992628210490595}
+  - component: {fileID: 2697886987169337241}
   m_Layer: 0
   m_Name: queen white
   m_TagString: Piece
@@ -88,8 +89,21 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1097155551969228}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 2.106178, y: 4.2839575, z: 2.053372}
   m_Center: {x: 0, y: 2.149922, z: 0.053485274}
+--- !u!114 &2697886987169337241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1097155551969228}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea24cfbe349664e8d8ad131515c786ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentSquare: {fileID: 0}

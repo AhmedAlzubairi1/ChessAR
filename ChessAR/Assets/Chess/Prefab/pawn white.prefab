@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 33146442824295622}
   - component: {fileID: 23812868346385688}
   - component: {fileID: 6186021807206193258}
+  - component: {fileID: 8291499303378952032}
   m_Layer: 0
   m_Name: pawn white
   m_TagString: Piece
@@ -88,8 +89,21 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1213357437349106}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1.9498557, y: 2.8404446, z: 1.900969}
   m_Center: {x: 0.00868994, y: 1.4240718, z: 0.023277551}
+--- !u!114 &8291499303378952032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213357437349106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea24cfbe349664e8d8ad131515c786ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentSquare: {fileID: 0}
