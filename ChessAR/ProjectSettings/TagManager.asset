@@ -6,6 +6,12 @@ TagManager:
   tags:
   - Piece
   - Square
+  - Rook
+  - Bishop
+  - Knight
+  - Queen
+  - King
+  - Pawn
   layers:
   - Default
   - TransparentFX
