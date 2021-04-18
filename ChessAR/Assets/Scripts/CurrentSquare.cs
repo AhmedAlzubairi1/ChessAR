@@ -20,6 +20,9 @@ public class CurrentSquare : MonoBehaviour
             if (currentSquare != other.gameObject) {
                 // only update the public variable when it's a new square
                 currentSquare = other.gameObject;
+                Vector3 position = currentSquare.transform.localPosition;
+                position.y = RaySelect.initialHeight;
+                transform.localPosition = position;
             }
         }
     }

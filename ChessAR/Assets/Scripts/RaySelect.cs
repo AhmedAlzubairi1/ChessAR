@@ -11,13 +11,14 @@ public class RaySelect : MonoBehaviour
     public GameObject selectedPiece;
     public GameObject selectedSquare;
     public TextMeshProUGUI turnText;
+    public TextMeshProUGUI statusText;
 
     private Color oldColorPiece;
     private GameObject prevGmPiece;
     private Color oldColorSquare;
     public static float initialHeight = 0.6f;
-    private float halfHeight = 1.0f;
-    private float raiseHeight = 1.8f;
+    private float halfHeight = initialHeight;
+    private float raiseHeight = 2f;
 
     private bool whiteTurn;
     private bool ready;
@@ -52,6 +53,14 @@ public class RaySelect : MonoBehaviour
         "Pawn"
     };
 
+    private Dictionary<string, string> statusStrings = new Dictionary<string, string>(){
+        { "start", "tap a piece" },
+        { "tap and hold", "tap and hold the piece" },
+        { "move", "move phone to select a square" },
+        { "confirm move", "you have moved the piece" },
+        { "confirm capture", "you have captured a piece" }
+    };
+
     void Start()
     {
         whiteTurn = true;
@@ -61,10 +70,16 @@ public class RaySelect : MonoBehaviour
         touchDist = -1;
         touchSelect = false;
         touchSpeed = Vector3.zero;
+        statusText.text = statusStrings["start"];
     }
 
     void Update()
     {
+        if (whiteTurn) {
+            turnText.text = "WHITE turn";
+        } else {
+            turnText.text = "BLACK turn";
+        }
         //#if UNITY_IPHONE || UNITY_ANDROID
         if (Input.touchCount == 1 && ready)
         {
@@ -89,17 +104,20 @@ public class RaySelect : MonoBehaviour
                     {
                         StartCoroutine(raisePiece(null, selectedPiece));
                         selectedPiece = null;
+                        statusText.text = statusStrings["start"];
                     }
                 }
                 touchTimer = -1;
                 touchDist = -1;
             }
-            else if (Time.time - touchTimer > 0.3f && selectedPiece)
+            else if (Time.time - touchTimer > 0.5f && selectedPiece)
             {
-                if (touchDist == -1) touchDist = Vector3.Distance(cm.transform.position, selectedPiece.transform.position);
-                else if (!touchSelect && Vector3.Distance(cm.transform.position, selectedPiece.transform.position) / touchDist < 0.8f)
+                // if (touchDist == -1) touchDist = Vector3.Distance(cm.transform.position, selectedPiece.transform.position);
+                // else if (!touchSelect && Vector3.Distance(cm.transform.position, selectedPiece.transform.position) / touchDist < 0.8f)
+                if (!touchSelect)
                 {
                     touchSelect = true;
+                    statusText.text = statusStrings["move"];
                     if (selectedSquare) SetColor(selectedSquare, oldColorSquare);
                     selectedSquare = selectedPiece.GetComponent<CurrentSquare>().currentSquare;
                     oldColorSquare = GetColor(selectedSquare);
@@ -114,7 +132,7 @@ public class RaySelect : MonoBehaviour
                     desPos.y = raiseHeight;
                     //raise the piece first
                     if (selectedPiece.transform.localPosition.y < raiseHeight - 0.01f)
-                        selectedPiece.transform.localPosition = Vector3.SmoothDamp(selectedPiece.transform.localPosition, desPos, ref touchSpeed, 0.1f);
+                        selectedPiece.transform.localPosition = Vector3.SmoothDamp(selectedPiece.transform.localPosition, desPos, ref touchSpeed, 0.05f);
                     else if (selectedPiece.transform.localPosition.y < raiseHeight)
                         selectedPiece.transform.localPosition = desPos;
                     //find possible slots and move the piece
@@ -135,7 +153,7 @@ public class RaySelect : MonoBehaviour
                                 oldColorSquare = GetColor(obj);
                             }
                         }
-
+                        // movement speed following phone
                         desPos = selectedSquare.transform.localPosition;
                         desPos.y = raiseHeight;
                         selectedPiece.transform.localPosition = Vector3.SmoothDamp(selectedPiece.transform.localPosition, desPos, ref touchSpeed, 0.1f);
@@ -210,6 +228,7 @@ public class RaySelect : MonoBehaviour
 
                     //SetColor(obj, pieceSelectColor);
                     selectedPiece = obj;
+                    statusText.text = statusStrings["tap and hold"];
                 }
                 else
                 {
@@ -218,6 +237,7 @@ public class RaySelect : MonoBehaviour
 
                     ready = false;
                     StartCoroutine(raisePiece(null, obj));
+                    statusText.text = statusStrings["start"];
                 }
             }
             else if (piece == 0 && selectedPiece)
@@ -234,7 +254,7 @@ public class RaySelect : MonoBehaviour
                 oldColorSquare = GetColor(obj);
 
                 // if the same selection, move the piece
-                if (same) MovePiece();
+                // if (same) MovePiece();
             }
         }
         else
@@ -242,6 +262,7 @@ public class RaySelect : MonoBehaviour
             ready = false;
             StartCoroutine(raisePiece(null, selectedPiece));
             selectedPiece = null;
+            statusText.text = statusStrings["start"];
         }
     }
 
@@ -286,11 +307,6 @@ public class RaySelect : MonoBehaviour
             whiteTurn = !whiteTurn;
             ready = false;
             StartCoroutine(TranslatePiece(0));
-            if (whiteTurn) {
-                turnText.text = "WHITE turn";
-            } else {
-                turnText.text = "BLACK turn";
-            }
         }
         else
         {
@@ -319,7 +335,7 @@ public class RaySelect : MonoBehaviour
             originSquarePos.y = currentPos1.y;
 
             while (Vector3.Distance(currentPos1, originSquarePos) > 0.01f)
-            {
+            { // move piece to original space after deselecting
                 currentPos1 = Vector3.SmoothDamp(currentPos1, originSquarePos, ref speed, 0.1f);
                 prev.transform.localPosition = currentPos1;
                 yield return null;
@@ -337,8 +353,8 @@ public class RaySelect : MonoBehaviour
         //animation
         while (raiseL1 - initialHeight > 0.01f || halfHeight - raiseL2 > 0.01f)
         {
-            raiseL1 = Mathf.SmoothDamp(raiseL1, initialHeight, ref speed1, 0.1f);
-            raiseL2 = Mathf.SmoothDamp(raiseL2, halfHeight, ref speed2, 0.1f);
+            raiseL1 = Mathf.SmoothDamp(raiseL1, initialHeight, ref speed1, 0.05f);
+            raiseL2 = Mathf.SmoothDamp(raiseL2, halfHeight, ref speed2, 0.05f);
 
             if (prev)
             {
@@ -371,6 +387,17 @@ public class RaySelect : MonoBehaviour
 
     private IEnumerator TranslatePiece(int inputStage)
     {
+        statusText.text = statusStrings["confirm move"];
+        // get the row and col of the selected square
+        int[] row_col = SquareToRowAndCol(selectedSquare.name);
+        int row = row_col[0];
+        int col = row_col[1];
+
+        // get the destination square
+        GameObject des_square = GameObject.Find(RowAndColToSquare(row, col));
+        // get the piece on the destination square
+        GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
+
         Vector3 speed = Vector3.zero;
         Vector3 desPos = Vector3.zero;
 
@@ -408,9 +435,18 @@ public class RaySelect : MonoBehaviour
             {
                 //the capture, switch and promotion handler
             }
-            else selectedPiece.transform.localPosition = Vector3.SmoothDamp(selectedPiece.transform.localPosition, desPos, ref speed, 0.1f);
+            else selectedPiece.transform.localPosition = Vector3.SmoothDamp(selectedPiece.transform.localPosition, desPos, ref speed, 0.05f);
 
             yield return null;
+        }
+        
+        Debug.Log(row);
+        Debug.Log(col);
+        // capture-----
+        if (des_piece != null && des_piece != selectedPiece)
+        {
+            Destroy (des_piece);
+            statusText.text = statusStrings["confirm capture"];
         }
 
         selectedPiece.transform.localPosition = desPos;
@@ -424,6 +460,7 @@ public class RaySelect : MonoBehaviour
         resetChessBoardColor();
         clearPossibleMoves();
         ready = true;
+        statusText.text = statusStrings["start"];
     }
 
     // -------------------------------------------------------------------------------
@@ -491,11 +528,17 @@ public class RaySelect : MonoBehaviour
 
                 GameObject temp = GameObject.Find(RowAndColToSquare(new_row, new_col));
 
+                // there is an enemy piece blocking the way. break
+                if (isEnemyPiece(new_row, new_col,current_piece)) break;
+
                 if (isValidMove(new_row, new_col, current_piece)) possible_moves[new_row, new_col] = true;
 
                 // the pawn is at second row
                 if (is_white_piece && row_col[0] == 1) new_row += 1;
                 else if (!is_white_piece && row_col[0] == 6) new_row -= 1;
+
+                // there is an enemy piece blocking the way. break
+                if (isEnemyPiece(new_row, new_col,current_piece)) break;
 
                 if (isValidMove(new_row, new_col, current_piece) && temp.GetComponent<CurrentPiece>().currentPiece == null)
                     possible_moves[new_row, new_col] = true;
@@ -504,6 +547,7 @@ public class RaySelect : MonoBehaviour
         }
 
         showPossibleMoves();
+        setPossibleCaptures(current_piece);
     }
 
     // reflect possible_moves arrry to the chess board
@@ -523,6 +567,87 @@ public class RaySelect : MonoBehaviour
                 }
             }
         }
+    }
+
+    // find possible capture
+    void setPossibleCaptures(GameObject current_piece)
+    {
+        // get current square
+        GameObject current_square = current_piece.GetComponent<CurrentSquare>().currentSquare;
+        bool is_white_piece = current_piece.name.Contains("white");
+        // get current row and col
+        int[] row_col = SquareToRowAndCol(current_square.name);
+        int new_row = row_col[0];
+        int new_col = row_col[1];
+        // Pawn moves
+        if (current_piece.tag == "Pawn")
+        {
+            // white pawn moves upward
+            if (is_white_piece) 
+                new_row += 1;
+            // black pawu moves downward
+            else
+                new_row -= 1;
+            
+            // check for capture for the left side
+            if (isValidMove(new_row, new_col - 1, current_piece) && isEnemyPiece(new_row, new_col - 1, current_piece))
+            {
+                // set it to be a valid move
+                possible_moves[new_row, new_col - 1] = true;
+                setCaptureColor(new_row, new_col - 1);
+            }
+            // check for capture for the right side
+            if (isValidMove(new_row, new_col + 1, current_piece) && isEnemyPiece(new_row, new_col + 1, current_piece))
+            {
+                // set it to be a valid move
+                possible_moves[new_row, new_col + 1] = true;
+                setCaptureColor(new_row, new_col + 1);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < possible_moves.GetLength(0); i++)
+            {
+                for (int j = 0; j < possible_moves.GetLength(1); j++)
+                {
+                    if (possible_moves[i, j] == true && isValidMove(i, j, current_piece) && isEnemyPiece(i, j, current_piece))
+                    {
+                        // set capture color
+                        setCaptureColor(i, j);
+                    }
+                }
+            }
+        }
+    }
+
+    // given the current piece, the destination row and color,
+    // return true if there is an enemy piece on the square
+    bool isEnemyPiece(int row, int col, GameObject current_piece)
+    {
+        // get the destination square
+        GameObject des_square = GameObject.Find(RowAndColToSquare(row, col));
+        // get piece on the destination square
+        GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
+        // if des_piece is null, return false
+        if (des_piece == null) return false;
+        else
+        {
+            //get the color by name
+            bool current_white = current_piece.name.Contains("white");
+            bool des_white = des_piece.name.Contains("white");
+
+            // return true if the color is not the same, false otherwise
+            return ((current_white && !des_white) || (!current_white && des_white));
+        }
+    }
+
+    // set the color of the given square to cyan 
+    void setCaptureColor(int row, int col)
+    {
+        // get the destination square
+        GameObject des_square = GameObject.Find(RowAndColToSquare(row, col));
+        // set color to be cyan
+        SetColor(des_square, Color.cyan);
     }
 
     // set the corss moves for Rook or Queen
@@ -554,6 +679,9 @@ public class RaySelect : MonoBehaviour
 
                 //set possible_moves to be true
                 possible_moves[new_row, new_col] = true;
+
+                // there is an enemy piece blocking the way. break
+                if (isEnemyPiece(new_row, new_col,current_piece)) break;
             }
         }
     }
@@ -584,11 +712,14 @@ public class RaySelect : MonoBehaviour
                 int new_row = current_row + rook_directions[m, j];
                 int new_col = current_col + rook_directions[n, j];
 
-                // there is a piece blocking the way. break
+                // there is an allied piece blocking the way. break
                 if (!isValidMove(new_row, new_col, current_piece)) break;
 
                 //set possible_moves to be true
                 possible_moves[new_row, new_col] = true;
+
+                // there is an enemy piece blocking the way. break
+                if (isEnemyPiece(new_row, new_col,current_piece)) break;
             }
         }
     }
