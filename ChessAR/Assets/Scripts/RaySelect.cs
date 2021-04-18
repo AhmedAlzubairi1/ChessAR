@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class RaySelect : MonoBehaviour
@@ -12,6 +13,28 @@ public class RaySelect : MonoBehaviour
     public GameObject selectedSquare;
     public TextMeshProUGUI turnText;
     public TextMeshProUGUI statusText;
+
+    public Sprite emptySpr;
+    public Sprite black_pawn;
+    public Sprite black_rook;
+    public Sprite black_bishop;
+    public Sprite black_knight;
+    public Sprite black_queen;
+    public Sprite black_king;
+    public Sprite white_pawn;
+    public Sprite white_rook;
+    public Sprite white_bishop;
+    public Sprite white_knight;
+    public Sprite white_queen;
+    public Sprite white_king;
+
+    public Transform blackCapture;
+    public Transform whiteCapture;
+    private int blackIndex;
+    private int whiteIndex;
+
+    public GameObject promotionPanel;
+    Vector3 promotionScale;
 
     private Color oldColorPiece;
     private GameObject prevGmPiece;
@@ -25,7 +48,7 @@ public class RaySelect : MonoBehaviour
     private bool updateMove;
 
     private float touchTimer;
-    private float touchDist;
+    //private float touchDist;
     private bool touchSelect;
     private Vector3 touchSpeed;
 
@@ -67,10 +90,21 @@ public class RaySelect : MonoBehaviour
         ready = true;
         updateMove = false;
         touchTimer = -1;
-        touchDist = -1;
+        //touchDist = -1;
         touchSelect = false;
         touchSpeed = Vector3.zero;
         statusText.text = statusStrings["start"];
+        promotionScale = promotionPanel.transform.localScale;
+        promotionPanel.SetActive(false);
+
+        blackIndex = 0;
+        whiteIndex = 0;
+
+        for (int i = 0; i < 16; i++)
+        {
+            whiteCapture.GetChild(i).gameObject.GetComponent<Image>().sprite = emptySpr;
+            blackCapture.GetChild(i).gameObject.GetComponent<Image>().sprite = emptySpr;
+        }
     }
 
     void Update()
@@ -108,7 +142,7 @@ public class RaySelect : MonoBehaviour
                     }
                 }
                 touchTimer = -1;
-                touchDist = -1;
+                //touchDist = -1;
             }
             else if (Time.time - touchTimer > 0.5f && selectedPiece)
             {
@@ -126,7 +160,7 @@ public class RaySelect : MonoBehaviour
                 if (touchSelect)
                 {
                     selectedPiece.layer = 2;
-                    LayerMask mask = (1 << 0) | (0 << 1);
+                    LayerMask mask = (1 << 0) | (0 << 2);
 
                     Vector3 desPos = selectedPiece.transform.localPosition;
                     desPos.y = raiseHeight;
@@ -174,7 +208,6 @@ public class RaySelect : MonoBehaviour
 
     void FindObj()
     {
-        Debug.Log(Time.time - touchTimer);
         // Cast ray from the screen
         RaycastHit hit;
         Ray raycast = cm.ScreenPointToRay(Input.mousePosition);
@@ -184,7 +217,6 @@ public class RaySelect : MonoBehaviour
         {
             // store informations about current gameObject
             GameObject obj = hit.transform.gameObject;
-            bool same = false;
 
             // 0 for square, 1 for piece
             int piece = -1;
@@ -209,15 +241,8 @@ public class RaySelect : MonoBehaviour
                 resetChessBoardColor();
                 updateMove = true;
 
-                // if a previous selection exists, reset to old color
-                if (prevGmPiece)
-                {
-                    //SetColor(prevGmPiece, oldColorPiece);
-                    if (prevGmPiece == obj) same = true;
-                }
-
                 // only indicate new selection for different pieces
-                if (!same)
+                if (prevGmPiece != obj)
                 {
                     ready = false;
                     StartCoroutine(raisePiece(obj, prevGmPiece));
@@ -242,6 +267,8 @@ public class RaySelect : MonoBehaviour
             }
             else if (piece == 0 && selectedPiece)
             {
+                bool same = false;
+
                 // if a previous selection exists, reset to old color
                 if (selectedSquare)
                 {
@@ -254,7 +281,7 @@ public class RaySelect : MonoBehaviour
                 oldColorSquare = GetColor(obj);
 
                 // if the same selection, move the piece
-                // if (same) MovePiece();
+                if (same) MovePiece();
             }
         }
         else
@@ -388,6 +415,7 @@ public class RaySelect : MonoBehaviour
     private IEnumerator TranslatePiece(int inputStage)
     {
         statusText.text = statusStrings["confirm move"];
+
         // get the row and col of the selected square
         int[] row_col = SquareToRowAndCol(selectedSquare.name);
         int row = row_col[0];
@@ -398,24 +426,42 @@ public class RaySelect : MonoBehaviour
         // get the piece on the destination square
         GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
 
+        //scales needed for animation
+        Vector3 sel_piece_scale = selectedPiece.transform.localScale;
+        Vector3 des_piece_scale = Vector3.zero;
+        if (des_piece) des_piece_scale = des_piece.transform.localScale;
+
+        float scaleFactor = 1.0f;
+        float scaleSpeed = 0;
+
         Vector3 speed = Vector3.zero;
         Vector3 desPos = Vector3.zero;
 
         //0 for raise to max height, 1 for horizontal move, 2 for drop
         int transStage = inputStage;
 
+        //set the destination before start
         if (transStage == 0) desPos = selectedPiece.transform.localPosition;
         else desPos = selectedSquare.transform.localPosition;
         desPos.y = raiseHeight;
 
         //stop the animation if special move is needed (capture, switch or promotion)
         bool stop = false;
-        bool specialMove = false;
+        int specialMove = 0;
+
+        //capture
+        if (des_piece && des_piece != selectedPiece) specialMove += 1;
+        //promotion
+        if (selectedPiece.tag == "Pawn")
+        {
+            if (selectedPiece.name.Contains("white") && selectedSquare.name.Contains("8")) specialMove += 2;
+            else if (selectedPiece.name.Contains("black") && selectedSquare.name.Contains("1")) specialMove += 2;
+        }
 
         while (Vector3.Distance(desPos, selectedPiece.transform.localPosition) > 0.01f || transStage != 2)
         {
             //if approaching the destination, change to the next destination
-            if (Vector3.Distance(desPos, selectedPiece.transform.localPosition) < 0.1f)
+            if (Vector3.Distance(desPos, selectedPiece.transform.localPosition) < 0.01f)
             {
                 if (transStage == 0)
                 {
@@ -426,31 +472,118 @@ public class RaySelect : MonoBehaviour
                 else if (transStage == 1)
                 {
                     desPos.y = initialHeight;
-                    stop = specialMove;
+                    stop = (specialMove > 0);
                     transStage = 2;
                 }
             }
 
-            if (stop)
+            if (transStage == 2 && stop)
             {
                 //the capture, switch and promotion handler
+                scaleFactor = Mathf.SmoothDamp(scaleFactor, 0, ref scaleSpeed, 0.05f);
+
+                //capture-----
+                if (des_piece != null)
+                {
+                    statusText.text = statusStrings["confirm capture"];
+                    des_piece.transform.localScale = des_piece_scale * scaleFactor;
+
+                    if (scaleFactor < 0.01f)
+                    {
+                        Sprite target = null;
+                        if (des_piece.name.Contains("white"))
+                        {
+                            
+                            switch (des_piece.tag)
+                            {
+                                case ("Rook"): target = white_rook; break;
+                                case ("Pawn"): target = white_pawn; break;
+                                case ("Knight"): target = white_knight; break;
+                                case ("Bishop"): target = white_bishop; break;
+                                case ("Queen"): target = white_queen; break;
+                                case ("King"): target = white_king; break;
+                            }
+                            whiteCapture.GetChild(whiteIndex).gameObject.GetComponent<Image>().sprite = target;
+                            whiteIndex += 1;
+                        }
+                        else if (des_piece.name.Contains("black"))
+                        {
+                            switch (des_piece.tag)
+                            {
+                                case ("Rook"): target = black_rook; break;
+                                case ("Pawn"): target = black_pawn; break;
+                                case ("Knight"): target = black_knight; break;
+                                case ("Bishop"): target = black_bishop; break;
+                                case ("Queen"): target = black_queen; break;
+                                case ("King"): target = black_king; break;
+                            }
+                            blackCapture.GetChild(blackIndex).gameObject.GetComponent<Image>().sprite = target;
+                            blackIndex += 1;
+                        }
+
+                        Destroy(des_piece);
+                        des_piece = null;
+
+                        if (specialMove == 1)
+                        {
+                            stop = false;
+                            specialMove = 0;
+                        }
+                    }
+                }
+
+                //promotion
+                if (specialMove > 1 && selectedPiece.tag == "Pawn")
+                {
+                    promotionPanel.SetActive(true);
+                    promotionPanel.transform.localPosition = selectedPiece.transform.localPosition;
+                    promotionPanel.transform.localScale = promotionScale * (1 - scaleFactor);
+                    selectedPiece.transform.localScale = sel_piece_scale * scaleFactor;
+
+                    Vector3 promotionR = promotionPanel.transform.localEulerAngles;
+                    promotionR.y += 1;
+                    if (promotionR.y > 180) promotionR.y -= 360;
+                    promotionPanel.transform.localEulerAngles = promotionR;
+
+                    if (Input.touchCount == 1)
+                    {
+                        RaycastHit hit;
+                        Ray raycast = cm.ScreenPointToRay(Input.mousePosition);
+
+                        if (Physics.Raycast(raycast, out hit))
+                        {
+                            GameObject obj = hit.transform.gameObject;
+                            if (obj.name.Contains("Promotion"))
+                            {
+                                Material curMat = selectedPiece.GetComponent<Renderer>().material;
+                                selectedPiece.tag = obj.tag;
+                                selectedPiece.GetComponent<MeshFilter>().mesh = obj.GetComponent<MeshFilter>().mesh;
+                                selectedPiece.GetComponent<Renderer>().material = curMat;
+                                scaleFactor = 1;
+                            }
+                        }
+                    }
+                }
+                else if (specialMove > 1)
+                {
+                    promotionPanel.transform.localScale = promotionScale * scaleFactor;
+                    selectedPiece.transform.localScale = sel_piece_scale * (1 - scaleFactor);
+
+                    if (scaleFactor < 0.01f)
+                    {
+                        promotionPanel.SetActive(false);
+                        selectedPiece.transform.localScale = sel_piece_scale;
+                        specialMove = 0;
+                        stop = false;
+                    }
+                }
             }
             else selectedPiece.transform.localPosition = Vector3.SmoothDamp(selectedPiece.transform.localPosition, desPos, ref speed, 0.05f);
 
             yield return null;
         }
-        
-        Debug.Log(row);
-        Debug.Log(col);
-        // capture-----
-        if (des_piece != null && des_piece != selectedPiece)
-        {
-            Destroy (des_piece);
-            statusText.text = statusStrings["confirm capture"];
-        }
 
         selectedPiece.transform.localPosition = desPos;
-        //SetColor(prevGmPiece, oldColorPiece);
         SetColor(selectedSquare, oldColorSquare);
         selectedPiece = null;
         selectedSquare = null;
@@ -775,9 +908,6 @@ public class RaySelect : MonoBehaviour
     // reset everything
     void resetAll()
     {
-        //reset the color
-        //if (prevGmPiece) SetColor(prevGmPiece, oldColorPiece);
-
         //reset gameobjects
         selectedPiece = null;
         selectedSquare = null;
