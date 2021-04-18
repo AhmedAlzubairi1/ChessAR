@@ -1,8 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Vuforia;
 
 public class Settings : MonoBehaviour
 {
@@ -16,7 +16,9 @@ public class Settings : MonoBehaviour
     float scaleFactor;
 
     //animation variable
-    float speed;
+    float angleSpeed;
+    Vector3 scaleSpeed;
+    Vector3 posSpeed;
 
     //decided by the number of fingers on the phone
     int settingStage;
@@ -43,13 +45,17 @@ public class Settings : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //set auto focusing
+        VuforiaARController.Instance.RegisterVuforiaStartedCallback(start);
+        VuforiaARController.Instance.RegisterOnPauseCallback(pause);
+
         angle = chessboard.transform.localEulerAngles;
         scale = chessboard.transform.localScale;
         startPosition = chessboard.transform.localPosition;
         position = startPosition;
         scaleFactor = 1;
 
-        speed = 0;
+        angleSpeed = 0;
 
         settingStage = 0;
 
@@ -66,6 +72,18 @@ public class Settings : MonoBehaviour
         accDirection = 0;
         accCount = 0;
         resetCount = 0;
+    }
+
+    void start()
+    {
+        //when program start
+        CameraDevice.Instance.SetFocusMode(CameraDevice.FocusMode.FOCUS_MODE_CONTINUOUSAUTO);
+    }
+
+    void pause(bool paused)
+    {
+        //when program return from pause
+        if (!paused) CameraDevice.Instance.SetFocusMode(CameraDevice.FocusMode.FOCUS_MODE_CONTINUOUSAUTO);
     }
 
     // Update is called once per frame
@@ -95,16 +113,17 @@ public class Settings : MonoBehaviour
             else if (settingStage > 2) settingStage = -1;
             else
             {
+                //reserves 0.9-1.1 for no-change
                 float ratio = Vector2.Distance(Input.GetTouch(0).position, Input.GetTouch(1).position) / touchDist;
                 float newScaleFactor = scaleFactor;
                 if (ratio > 1.1f)
                 {
-                    newScaleFactor *= (ratio - 0.1f);
-                    if (newScaleFactor > 3.0f) newScaleFactor = 3.0f;
+                    newScaleFactor *= Mathf.Pow(ratio - 0.1f, 1.5f);
+                    if (newScaleFactor > 90.0f) newScaleFactor = 90.0f;
                 }
                 else if (ratio < 0.9f)
                 {
-                    newScaleFactor *= (ratio + 0.1f);
+                    newScaleFactor *= Mathf.Pow(ratio + 0.1f, 1.5f);
                     if (newScaleFactor < 0.3f) newScaleFactor = 0.3f;
                 }
 
@@ -167,12 +186,14 @@ public class Settings : MonoBehaviour
                     resetCount = 1;
                 }
 
+                //game reset
                 if (accCount > 12)
                 {
                     Handheld.Vibrate();
                     resetCount = 0;
                     resetScene();
                 }
+                //settings reset
                 else if (Time.time - accRecord > 0.25f)
                 {
                     accRecord = -1;
@@ -187,12 +208,10 @@ public class Settings : MonoBehaviour
             }
 
             //scale animation for reset
-            float deltaFactor = chessboard.transform.localScale.x / scale.x - scaleFactor;
-            chessboard.transform.localScale = scale * (scaleFactor + resetNum(deltaFactor, 0.05f));
+            chessboard.transform.localScale = Vector3.SmoothDamp(chessboard.transform.localScale, scale * scaleFactor, ref scaleSpeed, 0.2f);
 
             //position animation for reset
-            Vector3 deltaPosition = chessboard.transform.localPosition - position;
-            chessboard.transform.localPosition = resetVector3(deltaPosition, 0.05f) + position;
+            chessboard.transform.localPosition = Vector3.SmoothDamp(chessboard.transform.localPosition, position, ref posSpeed, 0.2f);
         }
         else
         {
@@ -215,17 +234,19 @@ public class Settings : MonoBehaviour
         float deltaAngle = chessboard.transform.localEulerAngles.y - angle.y;
         if (deltaAngle > 180.0f) deltaAngle -= 360.0f;
         else if (deltaAngle < -180.0f) deltaAngle += 360.0f;
-
+        
         if (deltaAngle >= 1.0f || deltaAngle <= -1.0f)
         {
-            speed = -0.05f * deltaAngle;
-            if (speed > 0 && speed < 1) speed = 1.0f;
-            else if (speed < 0 && speed > -1) speed = -1.0f;
+            angleSpeed = -0.05f * deltaAngle;
+            if (angleSpeed > 0 && angleSpeed < 1) angleSpeed = 1.0f;
+            else if (angleSpeed < 0 && angleSpeed > -1) angleSpeed = -1.0f;
             
-            chessboard.transform.localEulerAngles = rotate(chessboard.transform.localEulerAngles, speed);
+            chessboard.transform.localEulerAngles = rotate(chessboard.transform.localEulerAngles, angleSpeed);
         }
+        
     }
 
+    //rotate the angle
     Vector3 rotate(Vector3 angle, float degree)
     {
         Vector3 newAngle = angle + new Vector3(0, degree, 0);
@@ -235,34 +256,7 @@ public class Settings : MonoBehaviour
         return newAngle;
     }
 
-    float resetNum(float inputDelta, float step)
-    {
-        float delta = inputDelta;
-        if (delta > 0.05f) delta -= 0.05f;
-        else if (delta < -0.05f) delta += 0.05f;
-        else delta = 0;
-        return delta;
-    }
-
-    Vector3 resetVector3(Vector3 inputDelta, float step)
-    {
-        Vector3 delta = inputDelta;
-
-        if (delta.x > step) delta.x -= step;
-        else if (delta.x < -step) delta.x += step;
-        else delta.x = 0;
-
-        if (delta.y > step) delta.y -= step;
-        else if (delta.y < -step) delta.y += step;
-        else delta.y = 0;
-
-        if (delta.z > step) delta.z -= step;
-        else if (delta.z < -step) delta.z += step;
-        else delta.z = 0;
-
-        return delta;
-    }
-
+    //reset the game to start
     public static void resetScene()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
