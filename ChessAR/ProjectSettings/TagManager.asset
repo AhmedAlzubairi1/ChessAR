@@ -12,6 +12,10 @@ TagManager:
   - Queen
   - King
   - Pawn
+  - white-square
+  - black-square
+  - white-piece
+  - black-piece
   layers:
   - Default
   - TransparentFX

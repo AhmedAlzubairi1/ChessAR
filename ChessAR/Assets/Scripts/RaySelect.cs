@@ -84,6 +84,28 @@ public class RaySelect : MonoBehaviour
         { "confirm capture", "you have captured a piece" }
     };
 
+    // castling
+    private bool [,] not_moved_castling = new bool[2, 3]
+    {
+        // {white king, white queen side rook, white king side rook}
+        {true, true, true},
+        // {black king, black queen side rook, black king side rook}
+        {true, true, true}
+    };
+
+    private bool can_castling = false;
+    private List<string> castling_square_list = new List<string>()
+    {
+        "C1",
+        "D1",
+        "F1",
+        "G1",
+        "C8",
+        "D8",
+        "F8",
+        "G8"
+    };
+
     void Start()
     {
         whiteTurn = true;
@@ -457,6 +479,15 @@ public class RaySelect : MonoBehaviour
             if (selectedPiece.name.Contains("white") && selectedSquare.name.Contains("8")) specialMove += 2;
             else if (selectedPiece.name.Contains("black") && selectedSquare.name.Contains("1")) specialMove += 2;
         }
+        // castling
+        if (selectedPiece.tag == "King" || selectedPiece.tag == "Rook")
+        {
+            if (castling_square_list.Contains(selectedSquare.name) && can_castling) 
+            {
+                Debug.Log("specialMove = 1");
+                specialMove = 1;
+            }
+        }
 
         while (Vector3.Distance(desPos, selectedPiece.transform.localPosition) > 0.01f || transStage != 2)
         {
@@ -481,6 +512,89 @@ public class RaySelect : MonoBehaviour
             {
                 //the capture, switch and promotion handler
                 scaleFactor = Mathf.SmoothDamp(scaleFactor, 0, ref scaleSpeed, 0.05f);
+
+                // castling
+                if (des_piece == null && specialMove == 1)
+                {
+                    // move current piece
+                    selectedPiece.transform.localPosition = desPos;
+                    // now move another piece
+                    if (selectedPiece.name.Contains("white"))
+                    {
+                        if (selectedPiece.tag == "King")
+                        {
+                            // queen side castling
+                            if (selectedSquare.name == "C1")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("rook white");
+                                GameObject new_square = GameObject.Find("D1");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                            // king side castling
+                            if (selectedSquare.name == "G1")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("rook white (1)");
+                                GameObject new_square = GameObject.Find("F1");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                        }
+                        else if (selectedPiece.tag == "Rook")
+                        {
+                            // queen side castling
+                            if (selectedSquare.name == "D1")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("king white");
+                                GameObject new_square = GameObject.Find("C1");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                            // king side castling
+                            if (selectedSquare.name == "F1")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("king white");
+                                GameObject new_square = GameObject.Find("G1");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                        }
+                    }
+                    // black piece
+                    else
+                    {
+                        if (selectedPiece.tag == "King")
+                        {
+                            // queen side castling
+                            if (selectedSquare.name == "C8")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("rook black");
+                                GameObject new_square = GameObject.Find("D8");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                            // king side castling
+                            if (selectedSquare.name == "G8")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("rook black (1)");
+                                GameObject new_square = GameObject.Find("F8");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                        }
+                        else if (selectedPiece.tag == "Rook")
+                        {
+                            // queen side castling
+                            if (selectedSquare.name == "D8")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("king black");
+                                GameObject new_square = GameObject.Find("C8");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                            // king side castling
+                            if (selectedSquare.name == "F8")
+                            {
+                                GameObject queen_side_rook = GameObject.Find("king black");
+                                GameObject new_square = GameObject.Find("G8");
+                                queen_side_rook.transform.localPosition = new_square.transform.localPosition;
+                            }
+                        }
+                    }
+                }
 
                 //capture-----
                 if (des_piece != null)
@@ -617,6 +731,21 @@ public class RaySelect : MonoBehaviour
             // Rook moves
             case "Rook":
                 SetCrossMoves(row_col[0], row_col[1], current_piece);
+                // set not_moved_castling to false if the rook moved
+                if (is_white_piece)
+                {
+                    if (current_piece.name == "rook white" && current_square.name != "A1")
+                        not_moved_castling[0, 1] = false;
+                    if (current_piece.name == "rook white (1)" && current_square.name != "H1")
+                        not_moved_castling[0, 2] = false;
+                }
+                else
+                {
+                    if (current_piece.name == "rook black" && current_square.name != "A8")
+                        not_moved_castling[1, 1] = false;
+                    if (current_piece.name == "rook black (1)" && current_square.name != "H8")
+                        not_moved_castling[1, 2] = false;
+                }
                 break;
             // Bishop moves
             case "Bishop":
@@ -648,6 +777,17 @@ public class RaySelect : MonoBehaviour
                     new_row = row_col[0] + king_directions[i, 0];
                     new_col = row_col[1] + king_directions[i, 1];
                     if (isValidMove(new_row, new_col, current_piece)) possible_moves[new_row, new_col] = true;
+                }
+                // set not_moved_castling to false if the king moved
+                if (is_white_piece)
+                {
+                    if (current_piece.name == "king white" && current_square.name != "E1")
+                        not_moved_castling[0, 0] = false;
+                }
+                else
+                {
+                    if (current_piece.name == "king black" && current_square.name != "E8")
+                        not_moved_castling[1, 0] = false;
                 }
                 break;
             // Pawn moves
@@ -681,6 +821,8 @@ public class RaySelect : MonoBehaviour
 
         showPossibleMoves();
         setPossibleCaptures(current_piece);
+        if (current_piece.tag == "King" || current_piece.tag == "Rook")
+            setCastling(current_piece);
     }
 
     // reflect possible_moves arrry to the chess board
@@ -903,6 +1045,7 @@ public class RaySelect : MonoBehaviour
                 else SetColor(possible_square, Color.white);
             }
         }
+        can_castling = false;
     }
 
     // reset everything
@@ -954,4 +1097,257 @@ public class RaySelect : MonoBehaviour
     {
         return obj.GetComponent<Renderer>().material.color;
     }
+
+    // set castling square
+    void setCastling(GameObject cur_piece)
+    {
+        // king
+        if (cur_piece.tag == "King")
+        {
+            // white
+            if (cur_piece.name.Contains("white"))
+            {
+                // get objects of the queen side and king side rook
+                GameObject queen_side_rook = GameObject.Find("rook white");
+                GameObject king_side_rook = GameObject.Find("rook white (1)");
+                // king does not move
+                if (not_moved_castling[0, 0])
+                {
+                    // queen side rook does not move 
+                    if (not_moved_castling[0, 1] && queen_side_rook != null)
+                    {
+                        // if there is a queen side castling
+                        if (checkNoPieceBetweenCastling(cur_piece, queen_side_rook))
+                        {
+                            // set the color of the square
+                            GameObject new_king_square = GameObject.Find("C1");
+                            SetColor(new_king_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("C1");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                    // king side rook does not move
+                    if (not_moved_castling[0, 2] && king_side_rook != null)
+                    {
+                        // if there is a king side castling
+                        if (checkNoPieceBetweenCastling(cur_piece, king_side_rook))
+                        {
+                            // set the color of the square
+                            GameObject new_king_square = GameObject.Find("G1");
+                            SetColor(new_king_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("G1");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                }
+            }
+            // black
+            else
+            {
+                GameObject queen_side_rook = GameObject.Find("rook black");
+                GameObject king_side_rook = GameObject.Find("rook black (1)");
+                // king does not move
+                if (not_moved_castling[1, 0])
+                {
+                    // queen side rook does not move 
+                    if (not_moved_castling[1, 1] && queen_side_rook != null)
+                    {
+                        // if there is a queen side castling
+                        if (checkNoPieceBetweenCastling(cur_piece, queen_side_rook))
+                        {
+                            // set the color of the square
+                            GameObject new_king_square = GameObject.Find("C8");
+                            SetColor(new_king_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("C8");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                    // king side rook does not move
+                    if (not_moved_castling[1, 2] && king_side_rook != null)
+                    {
+                        // if there is a king side castling
+                        if (checkNoPieceBetweenCastling(cur_piece, king_side_rook))
+                        {
+                            // set the color of the square
+                            GameObject new_king_square = GameObject.Find("G8");
+                            SetColor(new_king_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("G8");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                }
+            }
+        }
+        // rook
+        else if (cur_piece.tag == "Rook")
+        {
+            // white rook
+            if (cur_piece.name.Contains("white"))
+            {
+                Debug.Log("white rook");
+                GameObject king = GameObject.Find("king white");
+                GameObject rook_square = cur_piece.GetComponent<CurrentSquare>().currentSquare;
+                // queen side castling
+                if (rook_square.name == "A1")
+                {
+                    Debug.Log("A1 rook");
+                    // king and rook not move
+                    if (not_moved_castling[0, 0] && not_moved_castling[0, 1])
+                    {
+                        Debug.Log("not moved");
+                        // if there is a queen side castling
+                        if (checkNoPieceBetweenCastling(king, cur_piece))
+                        {
+                            Debug.Log("no piece between");
+                            // set the color of the square
+                            GameObject new_rook_square = GameObject.Find("D1");
+                            SetColor(new_rook_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("D1");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                }
+                // king side castling
+                else if (rook_square.name == "H1")
+                {
+                    // king and rook not move
+                    if (not_moved_castling[0, 0] && not_moved_castling[0, 2])
+                    {
+                        // if there is a queen side castling
+                        if (checkNoPieceBetweenCastling(king, cur_piece))
+                        {
+                            // set the color of the square
+                            GameObject new_rook_square = GameObject.Find("F1");
+                            SetColor(new_rook_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("F1");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                }
+            }
+            // black rook
+            else
+            {
+                GameObject king = GameObject.Find("king black");
+                GameObject rook_square = cur_piece.GetComponent<CurrentSquare>().currentSquare;
+                // queen side castling
+                if (rook_square.name == "A8")
+                {
+                    // king and rook not move
+                    if (not_moved_castling[1, 0] && not_moved_castling[1, 1])
+                    {
+                        // if there is a queen side castling
+                        if (checkNoPieceBetweenCastling(king, cur_piece))
+                        {
+                            // set the color of the square
+                            GameObject new_rook_square = GameObject.Find("D8");
+                            SetColor(new_rook_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("D8");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                }
+                // king side castling
+                else if (rook_square.name == "H8")
+                {
+                    // king and rook not move
+                    if (not_moved_castling[1, 0] && not_moved_castling[1, 2])
+                    {
+                        // if there is a queen side castling
+                        if (checkNoPieceBetweenCastling(king, cur_piece))
+                        {
+                            // set the color of the square
+                            GameObject new_rook_square = GameObject.Find("F8");
+                            SetColor(new_rook_square, Color.yellow);
+                            // set the possible_moves to be true
+                            int[] new_square = SquareToRowAndCol("F8");
+                            possible_moves[new_square[0], new_square[1]] = true;
+                            can_castling = true;
+                        }
+                    }
+                }
+            }
+            
+        }
+    }
+
+    // Given the king and the rook
+    // return true if there is no pieces between them
+    bool checkNoPieceBetweenCastling(GameObject king, GameObject rook)
+    {
+        GameObject rook_square = rook.GetComponent<CurrentSquare>().currentSquare;
+        GameObject king_square = king.GetComponent<CurrentSquare>().currentSquare;
+        // white
+        if (king.name.Contains("white"))
+        {
+            if (rook_square.name == "A1")
+            {
+                // get the squares and pieces between king and rook
+                GameObject squareB = GameObject.Find("B1");
+                GameObject squareC = GameObject.Find("C1");
+                GameObject squareD = GameObject.Find("D1");
+                GameObject pieceB = squareB.GetComponent<CurrentPiece>().currentPiece;
+                GameObject pieceC = squareC.GetComponent<CurrentPiece>().currentPiece;
+                GameObject pieceD = squareD.GetComponent<CurrentPiece>().currentPiece;
+                // if they are all null, return true
+                if (pieceB == null && pieceC == null && pieceD == null)
+                    return true;
+            }
+            else if (rook_square.name == "H1")
+            {
+                // get the squares and pieces between king and rook
+                GameObject squareF = GameObject.Find("F1");
+                GameObject squareG = GameObject.Find("G1");
+                GameObject pieceF = squareF.GetComponent<CurrentPiece>().currentPiece;
+                GameObject pieceG = squareG.GetComponent<CurrentPiece>().currentPiece;
+                // if they are all null, return true
+                if (pieceF == null && pieceG == null)
+                    return true;
+            }
+        }
+        // black
+        else
+        {
+            if (rook_square.name == "A8")
+            {
+                // get the squares and pieces between king and rook
+                GameObject squareB = GameObject.Find("B8");
+                GameObject squareC = GameObject.Find("C8");
+                GameObject squareD = GameObject.Find("D8");
+                GameObject pieceB = squareB.GetComponent<CurrentPiece>().currentPiece;
+                GameObject pieceC = squareC.GetComponent<CurrentPiece>().currentPiece;
+                GameObject pieceD = squareD.GetComponent<CurrentPiece>().currentPiece;
+                // if they are all null, return true
+                if (pieceB == null && pieceC == null && pieceD == null)
+                    return true;
+            }
+            else if (rook_square.name == "H8")
+            {
+                // get the squares and pieces between king and rook
+                GameObject squareF = GameObject.Find("F8");
+                GameObject squareG = GameObject.Find("G8");
+                GameObject pieceF = squareF.GetComponent<CurrentPiece>().currentPiece;
+                GameObject pieceG = squareG.GetComponent<CurrentPiece>().currentPiece;
+                // if they are all null, return true
+                if (pieceF == null && pieceG == null)
+                    return true;
+            }
+        }
+        return false;
+    }
+    
 }

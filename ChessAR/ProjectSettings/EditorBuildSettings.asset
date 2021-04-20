@@ -45,6 +45,9 @@ EditorBuildSettings:
     path: Assets/SamplesResources/Scenes/3-VuMarks.unity
     guid: d9b53b25a285640cf8ac170a80603e34
   - enabled: 1
+    path: Assets/Scenes/StartMenu.unity
+    guid: 93431b70c62cf43aeaa1c911551846a7
+  - enabled: 1
     path: Assets/Scenes/chessScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects: {}
