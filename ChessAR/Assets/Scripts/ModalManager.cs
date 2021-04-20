@@ -5,21 +5,18 @@ using UnityEngine.SceneManagement;
 
 public class ModalManager : MonoBehaviour
 {
-private string selectedColor;
-    private GameObject bw;
-    private GameObject wood;
-    private GameObject stone;
-    private GameObject indicator;
+    private string selectedColor;
+    public GameObject bw;
+    public GameObject wood;
+    public GameObject stone;
+    public GameObject indicator;
     public GameObject Modal;
     public GameObject Home;
     public GameObject Help;
     public GameObject Settings;
     void Start() {
         selectedColor = ColorManager.colorScheme;
-        bw = GameObject.Find("bw-button");
-        wood = GameObject.Find("wood-button");
-        stone = GameObject.Find("stone-button");
-        indicator = GameObject.Find("indicator");
+        UpdateIndicator();
     }
     void Update() {
         if (ColorManager.colorScheme != selectedColor) {

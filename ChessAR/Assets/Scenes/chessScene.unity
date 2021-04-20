@@ -1540,7 +1540,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 188.29443}
+  m_AnchoredPosition: {x: 0, y: 188.29492}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &117968640
@@ -5370,6 +5370,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 381290a4261204880950d026ad1466c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bw: {fileID: 912632601}
+  wood: {fileID: 1794262149}
+  stone: {fileID: 592429335}
+  indicator: {fileID: 193340849}
   Modal: {fileID: 205030295}
   Home: {fileID: 676722545}
   Help: {fileID: 1207852074}
@@ -13994,8 +13998,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0bc33f77bb3d4501bdf9dd8c0d421f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  black: {fileID: 2100000, guid: 1001028ccef0a664cb886d43fbbb9779, type: 2}
-  white: {fileID: 2100000, guid: 2da05c736a1b3d34ab80aaf2cf973f04, type: 2}
+  black: {fileID: 2100000, guid: c7a91a1d838021d46a3beeba195a4aa8, type: 2}
+  white: {fileID: 2100000, guid: 116487f1c4a974f4e8d91b28b088f264, type: 2}
   bwPiece: {fileID: 2100000, guid: 1a80419c5beff46619d9a62e6d43a50c, type: 2}
   bwSquare: {fileID: 2100000, guid: 1a4825abcf39946369651fffe32dc661, type: 2}
   wwPiece: {fileID: 2100000, guid: fd00adea16a8a40fbbe819645873d2f2, type: 2}

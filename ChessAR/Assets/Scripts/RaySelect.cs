@@ -51,6 +51,9 @@ public class RaySelect : MonoBehaviour
     //private float touchDist;
     private bool touchSelect;
     private Vector3 touchSpeed;
+    private Color colorWhite;
+    private Color colorBlack;
+    private ColorUpdater cu;
 
     // 2D array of possible moves of a piece
     private bool[,] possible_moves = new bool[8, 8]
@@ -127,8 +130,9 @@ public class RaySelect : MonoBehaviour
             whiteCapture.GetChild(i).gameObject.GetComponent<Image>().sprite = emptySpr;
             blackCapture.GetChild(i).gameObject.GetComponent<Image>().sprite = emptySpr;
         }
+        cu = GameObject.Find("ChessBoard").GetComponent<ColorUpdater>();
+        SetTheme();
     }
-
     void Update()
     {
         if (whiteTurn) {
@@ -1028,10 +1032,23 @@ public class RaySelect : MonoBehaviour
         }
         else return false;
     }
+    void SetTheme() {
+        if (ColorManager.colorScheme == "bw") {
+            colorBlack = cu.black.color;
+            colorWhite = cu.white.color;
+        } else if (ColorManager.colorScheme == "wood") {
+            colorBlack = cu.bwSquare.color;
+            colorWhite = cu.wwSquare.color;
+        } else if (ColorManager.colorScheme == "stone") {
+            colorBlack = cu.bsSquare.color;
+            colorWhite = cu.wsSquare.color;
+        }
+    }
 
     // reset chess board color
     void resetChessBoardColor()
     {
+        SetTheme();
         for (int i = 0; i < possible_moves.GetLength(0); i++)
         {
             for (int j = 0; j < possible_moves.GetLength(1); j++)
@@ -1040,9 +1057,22 @@ public class RaySelect : MonoBehaviour
                 GameObject possible_square = GameObject.Find(RowAndColToSquare(i, j));
 
                 // black cells if row + col % 2 = 0
-                if ((i + j) % 2 == 0) SetColor(possible_square, Color.black);
+                // if ((i + j) % 2 == 0) SetColor(possible_square, Color.black);
+                if ((i + j) % 2 == 0) {
+                    SetColor(possible_square, colorBlack);
+                }
                 // white cells
-                else SetColor(possible_square, Color.white);
+                else {
+                    SetColor(possible_square, colorWhite);
+                }//Color.white);
+            }
+        }
+        foreach (Transform top in GameObject.Find("TopLayer").transform) {
+            string name = top.gameObject.name;
+            if (name == "White" || name.Split(' ')[0] == "White") {
+                SetColor(top.gameObject, colorWhite);
+            } else if (name == "Black" || name.Split(' ')[0] == "Black") {
+                SetColor(top.gameObject, colorBlack);
             }
         }
         can_castling = false;

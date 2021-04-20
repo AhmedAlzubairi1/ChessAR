@@ -41,15 +41,12 @@ public class ColorUpdater : MonoBehaviour
     void Update()
     {
         if (ColorManager.colorScheme != selectedColor) {
-            SetColors(ColorManager.colorScheme);
+            selectedColor = ColorManager.colorScheme;
+            SetColors(selectedColor);
         }
     }
-    void SetColors(string color)
+    public void SetColors(string color)
     {
-        Debug.Log("white squares: " + whiteSquares.Length);
-        Debug.Log("black squares: " + blackSquares.Length);
-        Debug.Log("white pieces: " + whitePieces.Length);
-        Debug.Log("black pieces: " + blackPieces.Length);
         if (color == "bw") {
             foreach (GameObject square in whiteSquares)
             {
