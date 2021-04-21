@@ -84,7 +84,10 @@ public class RaySelect : MonoBehaviour
         { "tap and hold", "tap and hold the piece" },
         { "move", "move phone to select a square" },
         { "confirm move", "you have moved the piece" },
-        { "confirm capture", "you have captured a piece" }
+        { "confirm capture", "you have captured a piece" },
+        { "black check", "black in check" },
+        { "white check", "white in check" },
+        { "checkmate", "checkmate!" }
     };
 
     // castling
@@ -711,7 +714,159 @@ public class RaySelect : MonoBehaviour
         resetChessBoardColor();
         clearPossibleMoves();
         ready = true;
-        statusText.text = statusStrings["start"];
+        // statusText.text = statusStrings["start"];
+        string king_name = "";
+        if (whiteTurn) king_name = "king white";
+        else king_name = "king black";
+        GameObject kingObj = GameObject.Find(king_name);
+        GameObject king_square = kingObj.GetComponent<CurrentSquare>().currentSquare;
+        row_col = SquareToRowAndCol(king_square.name);
+
+        if (Check(row_col[0], row_col[1], whiteTurn)) {
+            bool checkmate = true;
+
+            // if in check, see if king's possible moves also are in check
+            findPossibleMoves(kingObj);
+            for (int i = 0; i < possible_moves.GetLength(0); i++)
+            {
+                for (int j = 0; j < possible_moves.GetLength(1); j++)
+                {
+                    if (possible_moves[i, j] == true)
+                    {
+                        // if there is a possible escape, not in check
+                        if (!Check(i, j, whiteTurn)) {
+                            checkmate = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            clearPossibleMoves();
+
+            if (checkmate) {
+                statusText.text = statusStrings["checkmate"];
+            } else {
+                statusText.text = whiteTurn ? statusStrings["white check"] : statusStrings["black check"];
+            }
+        }
+        else statusText.text = statusStrings["start"];
+    }
+    //The codes to test check. Set "white" to true if the king is white
+    bool Check(int row, int col, bool white)
+    {
+        string piece_color = "";
+        if (white) piece_color = "black";
+        else piece_color = "white";
+
+        int new_row = -1;
+        int new_col = -1;
+
+        //check if an enemy rook/queen attacking
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 7; j++)
+            {
+                new_row = row;
+                new_col = col;
+
+                if (i == 0) new_row += (j + 1);
+                else if (i == 1) new_row -= (j + 1);
+                else if (i == 2) new_col += (j + 1);
+                else if (i == 3) new_col -= (j + 1);
+
+                if (new_row > 7 || new_row < 0 || new_col > 7 || new_col < 0) break;
+
+                GameObject des_square = GameObject.Find(RowAndColToSquare(new_row, new_col));
+                GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
+
+                if (des_piece)
+                {
+                    if (des_piece.name.Contains(piece_color) && (des_piece.tag == "Rook" || des_piece.tag == "Queen"))
+                        return true;
+                    else
+                        break;
+                }
+            }
+        }
+
+        //check if an enemy bishop/queen attacking
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 7; j++)
+            {
+                new_row = row;
+                new_col = col;
+
+                if (i == 1 || i == 3) new_row += (j + 1);
+                else new_row -= (j + 1);
+                if (i > 1) new_col += (j + 1);
+                else new_col -= (j + 1);
+
+                if (new_row > 7 || new_row < 0 || new_col > 7 || new_col < 0) break;
+
+                GameObject des_square = GameObject.Find(RowAndColToSquare(new_row, new_col));
+                GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
+
+                if (des_piece)
+                {
+                    if (des_piece.name.Contains(piece_color) && (des_piece.tag == "Bishop" || des_piece.tag == "Queen"))
+                        return true;
+                    else
+                        break;
+                }
+            }
+        }
+
+        //check if an enemy pawn attacking
+        if (white) new_row = row + 1;
+        else new_row = row - 1;
+
+        for (int i = 0; i < 2; i++)
+        {
+            if (i == 0) new_col = col + 1;
+            else new_col = col - 1;
+
+            if (new_row > 7 || new_row < 0 || new_col > 7 || new_col < 0) break;
+
+            GameObject des_square = GameObject.Find(RowAndColToSquare(new_row, new_col));
+            GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
+
+            if (des_piece)
+            {
+                if (des_piece.name.Contains(piece_color) && des_piece.tag == "Pawn")
+                    return true;
+            }
+        }
+
+        //check if an enemy knight attacking
+        for (int i = 0; i < 8; i++)
+        {
+            new_row = row;
+            new_col = col;
+
+            if (i == 0 || i == 1) new_row += 2;
+            else if (i == 2 || i == 3) new_row -= 2;
+            else if (i == 4 || i == 6) new_row += 1;
+            else if (i == 5 || i == 7) new_row -= 1;
+
+            if (i == 0 || i == 2) new_col -= 1;
+            else if (i == 1 || i == 3) new_col += 1;
+            else if (i == 4 || i == 5) new_col -= 2;
+            else if (i == 6 || i == 7) new_col += 2;
+
+            if (new_row > 7 || new_row < 0 || new_col > 7 || new_col < 0) break;
+
+            GameObject des_square = GameObject.Find(RowAndColToSquare(new_row, new_col));
+            GameObject des_piece = des_square.GetComponent<CurrentPiece>().currentPiece;
+
+            if (des_piece)
+            {
+                if (des_piece.name.Contains(piece_color) && des_piece.tag == "Knight")
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     // -------------------------------------------------------------------------------
